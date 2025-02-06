@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Generator</title>
+    <link rel="stylesheet" href="../static/home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+</head>
+<body>
+    <header>
+        <h1>Remedi</h1>
+    </header>
+    <main>
+        <section class="intro-section">
+            <div class="description">
+                <h2>About Our Website</h2>
+                <p>Healthcare providers often face challenges when specific medications are unavailable, whether due to supply issues, regulatory differences, or emergencies. This website acts as a smart tool that can quickly suggest alternative medications.</p>
+            </div>
+        </section>
+        <section class="search-section">
+            <label for="medicine-search">Enter Medicine Name:</label>
+            <div class="input-group">
+                <input type="text" id="medicine-search" placeholder="e.g., Paracetamol">
+                <button id="generate-btn">Generate Alternatives</button>
+            </div>
+            <p class="disclaimer">*DISCLAIMER: The information contained herein should NOT be used as a substitute for the advice of an appropriately qualified and licensed physician or other health care provider. Please check with a physician if you have health questions or concerns.</p>
+        </section>
+        <section class="results-section">
+            <div id="medicine-info">
+            </div>
+            <h2>Alternative Medications:</h2>
+            <div id="results-container">
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>Alternative Medicine Generator</p>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generate-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const medicineInfo = document.getElementById('medicine-info');
+
+            generateBtn.addEventListener('click', function() {
+                const medicineName = document.getElementById('medicine-search').value.trim();
+                if (medicineName === '') {
+                    medicineInfo.innerHTML = '<p>Please enter a medicine name.</p>';
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+                fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ medicine: medicineName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        medicineInfo.innerHTML = `<p>${data.error}</p>`;
+                        resultsContainer.innerHTML = '';
+                    } else {
+                        let medicineHtml = `<h3>${data.medicine}</h3>`;
+                        medicineHtml += `<p><strong>Major Composition 1 :</strong> ${data.composition.compo1} (${data.composition.quantity1})</p>`;
+                        medicineHtml += `<p><strong>Major Composition 2 :</strong> ${data.composition.compo2} (${data.composition.quantity2})</p>`;
+                        medicineInfo.innerHTML = medicineHtml;
+
+                        let alternativesHtml = '<ul>';
+                        data.alternatives.forEach(alt => {
+                        alternativesHtml += `<li><strong>${alt.name}</strong><br>`;
+                        alternativesHtml += `<p><strong>Composition 1:</strong> ${alt.composition.compo1} (${alt.composition.quantity1})</p>`;
+                        alternativesHtml += `<p><strong>Composition 2:</strong> ${alt.composition.compo2} (${alt.composition.quantity2})</p>`;
+                        alternativesHtml += `<p><strong>Cost:</strong> ₹${alt.cost}</p></li>`;
+                    });
+                    alternativesHtml += '</ul>';
+                    resultsContainer.innerHTML = alternativesHtml;
+                }
+                    }
+                )
+                .catch(error => {
+                    console.error('Error:', error);
+                    medicineInfo.innerHTML = '<p>An error occurred while generating alternatives. Please try again later.</p>';
+                    resultsContainer.innerHTML = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
